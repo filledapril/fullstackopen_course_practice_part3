@@ -1,8 +1,15 @@
-const { request, response } = require('express')
-const express = require('express')
-const app = express()
+const { request, response } = require('express');
+const express = require('express');
+const app = express();
+
+const morgan = require('morgan');
+
+morgan.token('body', (request) => JSON.stringify(request.body));
 
 app.use(express.json())
+app.use(morgan('tiny'))
+
+
 
 
 let persons = [
@@ -65,7 +72,7 @@ const generateId = () => {
     return Math.floor(Math.random() * 9999)
 }
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', morgan(':body'), (request, response) => {
     const body = request.body
 
     if (!body.name || !body.number) {
