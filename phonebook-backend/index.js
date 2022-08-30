@@ -7,15 +7,112 @@ const Person = require('./models/person')
 
 const cors = require('cors')
 const morgan = require('morgan');
+const { findByIdAndDelete } = require('./models/person');
 
 
 morgan.token('body', (request) => JSON.stringify(request.body));
 
+app.use(express.static('build'))
 app.use(express.json())
 app.use(cors())
 app.use(morgan('tiny'))
-app.use(express.static('build'))
 
+
+app.get('/api/persons', (request, response) => {
+  Person.find({}).then(people => {
+    response.json(people)
+  })
+})
+
+app.get('/info',(request, response) => {
+  const date = new Date();
+
+  Person.count().then(result => {
+    response.send(
+      `Phonebook has info for ${result} people <br />
+      ${date}`)
+  })
+})
+
+app.get('/api/persons/:id', (request, response, next) => {
+  const id = request.params.id
+
+  Person.findById(id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => next(error))
+})
+
+app.post('/api/persons', morgan(':body'), (request, response) => {
+  const body = request.body
+
+  if (!body.name || !body.number) {
+      return response.status(400).json({
+        error: 'name or number missing'
+      })
+    }
+    const person = new Person({
+      name: body.name,
+      number: body.number
+  })
+
+  person.save().then(savedPeople => {
+      response.json(savedPeople)
+  })
+})
+ 
+app.put('/api/persons/:id', (request, response, next) => {
+
+  const body = request.body
+  const person = {
+    name: body.name,
+    number: body.number,
+  }
+
+  Person.findByIdAndUpdate(request.params.id, person, {new: true})
+    .then(updatedPeople => {
+      response.json(updatedPeople)
+    })
+    .catch(error => next(error))
+})
+
+
+app.delete('/api/persons/:id', (request, response, next) => {
+  Person.findByIdAndRemove(request.params.id)
+    .then((result, error) => {
+      if(error){
+        response.status(204).end()
+      } else {
+        console.log(`${result.name} has been remove from phonebook `)
+      }
+    })
+    .catch(error => next(error))
+})
+
+const errorHandler = (error, request, respnse, next) => {
+  console.error(error.message)
+
+  if(error.name === 'CastError') {
+    return response.status(400).send({error: 'malformatted id'})
+  }
+  if(error.name === 'ValidationError') {
+    return response.status(400).send({error: error.message})
+  }
+
+  next(error)
+}
+
+const PORT = process.env.PORT
+app.listen(PORT, () => {
+console.log(`Server running on port ${PORT}`)
+})
+
+//---previous exercise-------
 // let persons = [
 //             {
 //                 "id": 1,
@@ -39,12 +136,6 @@ app.use(express.static('build'))
 //             }
 // ]
 
-
-app.get('/api/persons', (request, response) => {
-  Person.find({}).then(people => {
-    response.json(people)
-  })
-})
 
 // app.get('/info', (request, response) => {
 //     const total = persons.length
@@ -78,14 +169,6 @@ app.get('/api/persons', (request, response) => {
 //     return Math.floor(Math.random() * 9999)
 // }
 
-app.post('/api/persons', morgan(':body'), (request, response) => {
-    const body = request.body
-
-    if (!body.name || !body.number) {
-        return response.status(400).json({
-          error: 'name or number missing'
-        })
-      }
     
     // if(persons.find(p => p.name === body.name)) {
     //     return response.status(400).json({
@@ -93,19 +176,5 @@ app.post('/api/persons', morgan(':body'), (request, response) => {
     //       })
     // }
 
-    const person = new Person({
-        name: body.name,
-        number: body.number
-    })
-    
-    // persons = persons.concat(person)
-    person.save().then(savedPeople => {
-        response.json(savedPeople)
-    })
-})
 
-const PORT = process.env.PORT
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
 //https://lit-mountain-34512.herokuapp.com/api/persons
