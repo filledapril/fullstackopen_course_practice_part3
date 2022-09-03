@@ -7,7 +7,7 @@ const Person = require('./models/person')
 
 const cors = require('cors')
 const morgan = require('morgan');
-const { findByIdAndDelete } = require('./models/person');
+
 
 
 morgan.token('body', (request) => JSON.stringify(request.body));
@@ -68,13 +68,13 @@ app.post('/api/persons', morgan(':body'), (request, response) => {
  
 app.put('/api/persons/:id', (request, response, next) => {
 
-  const body = request.body
-  const person = {
-    name: body.name,
-    number: body.number,
-  }
+  const {name, number} = request.body
 
-  Person.findByIdAndUpdate(request.params.id, person, {new: true})
+  Person.findByIdAndUpdate(
+    request.params.id, 
+    {name, number}, 
+    {new: true, runValidators: true, context: 'query'}
+    )
     .then(updatedPeople => {
       response.json(updatedPeople)
     })
@@ -94,6 +94,11 @@ app.delete('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+app.use(unknownEndpoint)
+
 const errorHandler = (error, request, respnse, next) => {
   console.error(error.message)
 
@@ -106,6 +111,7 @@ const errorHandler = (error, request, respnse, next) => {
 
   next(error)
 }
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
