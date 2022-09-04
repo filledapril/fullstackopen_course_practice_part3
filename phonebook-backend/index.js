@@ -1,16 +1,16 @@
 require('dotenv').config()
-const { request, response } = require('express');
-const express = require('express');
-const app = express();
+const { response } = require('express')
+const express = require('express')
+const app = express()
 
 const Person = require('./models/person')
 
 const cors = require('cors')
-const morgan = require('morgan');
+const morgan = require('morgan')
 
 
 
-morgan.token('body', (request) => JSON.stringify(request.body));
+morgan.token('body', (request) => JSON.stringify(request.body))
 
 app.use(express.static('build'))
 app.use(express.json())
@@ -25,7 +25,7 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/info',(request, response) => {
-  const date = new Date();
+  const date = new Date()
 
   Person.count().then(result => {
     response.send(
@@ -52,29 +52,29 @@ app.post('/api/persons', morgan(':body'), (request, response) => {
   const body = request.body
 
   if (!body.name || !body.number) {
-      return response.status(400).json({
-        error: 'name or number missing'
-      })
-    }
-    const person = new Person({
-      name: body.name,
-      number: body.number
+    return response.status(400).json({
+      error: 'name or number missing'
+    })
+  }
+  const person = new Person({
+    name: body.name,
+    number: body.number
   })
 
   person.save().then(savedPeople => {
-      response.json(savedPeople)
+    response.json(savedPeople)
   })
 })
- 
+
 app.put('/api/persons/:id', (request, response, next) => {
 
-  const {name, number} = request.body
+  const { name, number } = request.body
 
   Person.findByIdAndUpdate(
-    request.params.id, 
-    {name, number}, 
-    {new: true, runValidators: true, context: 'query'}
-    )
+    request.params.id,
+    { name, number },
+    { new: true, runValidators: true, context: 'query' }
+  )
     .then(updatedPeople => {
       response.json(updatedPeople)
     })
@@ -103,10 +103,10 @@ const errorHandler = (error, request, respnse, next) => {
   console.error(error.message)
 
   if(error.name === 'CastError') {
-    return response.status(400).send({error: 'malformatted id'})
+    return response.status(400).send({ error: 'malformatted id' })
   }
   if(error.name === 'ValidationError') {
-    return response.status(400).send({error: error.message})
+    return response.status(400).send({ error: error.message })
   }
 
   next(error)
@@ -115,7 +115,7 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
-console.log(`Server running on port ${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 })
 
 //---previous exercise-------
@@ -175,12 +175,12 @@ console.log(`Server running on port ${PORT}`)
 //     return Math.floor(Math.random() * 9999)
 // }
 
-    
-    // if(persons.find(p => p.name === body.name)) {
-    //     return response.status(400).json({
-    //         error: 'name must be unique'
-    //       })
-    // }
+
+// if(persons.find(p => p.name === body.name)) {
+//     return response.status(400).json({
+//         error: 'name must be unique'
+//       })
+// }
 
 
 //https://lit-mountain-34512.herokuapp.com/api/persons
